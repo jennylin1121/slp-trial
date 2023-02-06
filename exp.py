@@ -5,11 +5,26 @@ from trial import TrialObjects, TrialObject, TrialProcess
 import numpy as np
 import pandas as pd
 import random
+import os
 
 
 WIN = None
 OBJS = None
 FIXATION = None
+
+def dialogue_window():
+    global EXPINFO
+    try:
+        EXPINFO = fromFile('stage1LastParams.pickle')
+    except:
+        EXPINFO = {'observer' : '', 'number': ''}
+    EXPINFO['dateStr'] = data.getDateStr()
+
+    dlg = gui.DlgFromDict(EXPINFO, title='Simple SLP Exp', fixed=['dateStr'])
+    if dlg.OK:
+        toFile('stage1LastParams.pickle', EXPINFO) # save params to file for next time
+    else:
+        core.quit()
 
 def __init__():
     global WIN, OBJS, FIXATION
@@ -30,19 +45,29 @@ def __del__():
     if WIN != None:
         WIN.close()
     core.quit()
+
+def output_stage1_data(df):
+    global EXPINFO
+    dirname = "stage1_data"
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+    filename = os.path.join(dirname,
+        EXPINFO['observer'] + EXPINFO['dateStr'] + '.csv')
+    df.to_csv(filename)
     
-
-
 
 def main():
     global WIN, OBJS, FIXATION
     
     trp = TrialProcess(WIN, OBJS)
-    trp.run()
-
+    data = trp.run()
+    
+    df = pd.DataFrame.from_dict(data)
+    output_stage1_data(df)
 
 
 if __name__ == '__main__':
+    dialogue_window()
     __init__()
     main()
     __del__()
