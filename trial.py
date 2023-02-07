@@ -1,9 +1,11 @@
-from psychopy import visual, core, event, gui, data
+from psychopy import visual, core, event, gui, data, sound
 from psychopy.tools.filetools import fromFile, toFile
 from itertools import product
+import psychtoolbox as ptb
 import numpy as np
 import pandas as pd
 import random
+import math
 
 CROSS_DISPLAY_INTERVAL = 1
 CROSS_PHOTO_INTERVAL = 0.4
@@ -12,7 +14,7 @@ PHOTO_WORD1_INTERVAL = 0.4
 WORD1_DISPLAY_INTERVAL = 0.5
 WORD1_WORD2_INTERVAL = 0.4
 WORD2_DISPLAY_INTERVAL = 0.5
-WORD2_CROSS_INTERVAL = 0.4
+WORD2_CROSS_INTERVAL = math.inf
 
 WORD_SIZE = 3
 
@@ -40,6 +42,9 @@ class TrialObjects(object):
     def get_trial_objects(self):
 #        return self.__trial_objects
         return random.sample(self.__trial_objects, len(self.__trial_objects))
+    
+    def get_img_stim(self):
+        return self.__img
         
         
 class TrialObject(object):
@@ -48,6 +53,7 @@ class TrialObject(object):
         self.__img = img
         self.__word1_name = word1
         self.__word2_name = word2
+        self.__win = win
         
         self.__word1 = visual.TextStim(win, text=word1, 
             colorSpace='rgb', font="Songti SC", color=[0, 0, 0])
@@ -60,18 +66,24 @@ class TrialObject(object):
         self.__ans = ans
         self.__response_time = 0
         
-    def display(self):
+    def display(self, flip=True):
         self.__img.draw()
+        if flip:
+            self.__win.flip()
         
-    def display_word1(self):
+    def display_word1(self, flip=True):
         self.__word1.draw()
+        if flip:
+            self.__win.flip()
     
-    def display_word2(self):
+    def display_word2(self, flip=True):
         self.__word2.draw()
+        if flip:
+            self.__win.flip()
+        
         
     def response(self, key, clk):
         self.__response_time = clk
-        print("response : ", key)
         if key == None:
             crt = 'no response'
         else:
@@ -85,7 +97,6 @@ class TrialObject(object):
         
     def is_correct(self, ans=None):
         if ans == None:
-            print("key is ", self.__key)
             return self.__key == self.__ans
         else:
             return ans == self.__ans
@@ -100,10 +111,10 @@ class TrialProcess(object):
         self.__win = win
         self.__trial_objs_set = trial_objs_set
         self.__fixation = visual.GratingStim(self.__win, color=[0, 0, 0], 
-                        colorSpace='rgb', tex=None, mask='cross', size=1)
+                        colorSpace='rgb', tex=None, mask='cross', size=WORD_SIZE)
                         
         self.__slow_alert_text = visual.TextStim(self.__win, 
-            text="快一點啦幹", color=[0, 0, 0], font="Songti SC")
+            text="快點喔", color=[0, 0, 0], font="Songti SC")
         
         self.__slow_alert_text.size = WORD_SIZE
                         
@@ -116,13 +127,37 @@ class TrialProcess(object):
         self.__all_trial_objs = random.sample(self.__all_trial_objs, 
             len(self.__all_trial_objs))
         
-            
+        self.__right_feedback_img = visual.ImageStim(self.__win, "./feedback/right.jpeg")
+        self.__false_feedback_img = visual.ImageStim(self.__win, "./feedback/fault.jpeg")
+        self.__right_sound_effect = sound.Sound("./feedback/right_sound_effect.wav")
+        self.__false_sound_effect = sound.Sound("./feedback/false_sound_effect.wav")
+     
+    def show_right_feedback(self):
+        self.__right_feedback_img.draw()
+        self.__right_sound_effect.play()
+        self.__win.flip()
+        
+    def show_false_feedback(self):
+        self.__false_feedback_img.draw()
+        self.__false_sound_effect.play()
+        self.__win.flip()
                         
-    def run(self):
-        
+    def run(self, trial_objs=None, reaction=False):
         data = []
-        
-        for obj in self.__all_trial_objs:
+        if trial_objs == None:
+            trial_objs = self.__all_trial_objs
+            
+        def __show_reaction(obj, reaction):
+            self.__win.flip()
+            if reaction:
+                if obj.is_correct():
+                    self.show_right_feedback()
+                else:
+                    self.show_false_feedback()
+                event.waitKeys(2)
+            
+        for obj in trial_objs:
+
             # display cross
             self.__fixation.draw()
             self.__win.flip()
@@ -138,7 +173,6 @@ class TrialProcess(object):
             
             # display the photo
             obj.display()
-            self.__win.flip()
             key = event.waitKeys(PHOTO_DISPLAY_INTERVAL, keyList=['escape'])
             if key != None:
                 break
@@ -154,9 +188,9 @@ class TrialProcess(object):
             
             # show the first word and wait for WORD1_DISPLAY_INTERVAL
             obj.display_word1()
-            self.__win.flip()
             key = event.waitKeys(WORD1_DISPLAY_INTERVAL, 
                 keyList=['q','p', 'escape'])
+                
             
             # check if the subject has responsed or not
             if key != None:
@@ -164,8 +198,9 @@ class TrialProcess(object):
                     break
                 else:
                     data.append(obj.response(key, clk.getTime()))
+                    __show_reaction(obj, reaction)
                     continue
-                
+                    
             # clear the first word and wait for WORD1_WORD2_INTERVAL
             self.__win.flip()
             key = event.waitKeys(WORD1_WORD2_INTERVAL, 
@@ -177,11 +212,11 @@ class TrialProcess(object):
                     break
                 else:
                     data.append(obj.response(key, clk.getTime()))
+                    __show_reaction(obj, reaction)
                     continue
                 
             # show the next word and wait for WORD2_DISPLAY_INTERVAL
             obj.display_word2()
-            self.__win.flip()
             key = event.waitKeys(WORD2_DISPLAY_INTERVAL, keyList=['q','p', 'escape'])
             
             # check the response
@@ -190,6 +225,7 @@ class TrialProcess(object):
                     break
                 else:
                     data.append(obj.response(key, clk.getTime()))
+                    __show_reaction(obj, reaction)
                     continue
             
             # clear the seconde word and wait for WORD2_CROSS_INTERVAL
@@ -201,16 +237,17 @@ class TrialProcess(object):
                     break
                 else:
                     data.append(obj.response(key, clk.getTime()))
+                    __show_reaction(obj, reaction)
                     continue
-            else:
-                # show the text that tells the user that his/her 
-                # response is too slow
-                self.__slow_alert_text.draw()
-                self.__win.flip()
-                data.append(obj.response(None, clk.getTime()))
-                key = event.waitKeys(1, keyList=['escape'])
-                if key != None:
-                    break
+#            else:
+#                # show the text that tells the user that his/her 
+#                # response is too slow
+#                self.__slow_alert_text.draw()
+#                self.__win.flip()
+#                data.append(obj.response(None, clk.getTime()))
+#                key = event.waitKeys(1, keyList=['escape'])
+#                if key != None:
+#                    break
                     
         return data
     
