@@ -110,7 +110,7 @@ if __name__ == '__main__':
     dialogue_window()
     __init__()
     halt_and_show_msg("練習開始")
-    practice()
+    practice()ㄌ
     halt_and_show_msg("練習結束")
     stage1()
 #    halt_and_show_msg("""
@@ -120,13 +120,13 @@ if __name__ == '__main__':
 #    Art Director : 
 #    Programmer : Lin, Yu-Chun
 #    """)
-    halt_and_show_msg("""
-    感謝您的參與
-    指導教授：
-    實驗設計：林佳怡
-    美術設計：XXX、楊朝琮
-    程式設計：林友鈞
-    """)
+#    halt_and_show_msg("""
+#    感謝您的參與
+#    指導教授：
+#    實驗設計：林佳怡
+#    美術設計：XXX、楊朝琮
+#    程式設計：林友鈞
+#    """)
 
     __del__()
     

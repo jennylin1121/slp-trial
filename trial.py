@@ -18,42 +18,41 @@ WORD2_CROSS_INTERVAL = math.inf
 
 WORD_SIZE = 3
 
-class TrialObjects(object):
-    
-    def __init__(self, win, dir_path, array):
-        self.__name = array[0]
-        self.__test = array[1:]
-        self.__img = visual.ImageStim(win, dir_path + self.__name + ".jpeg")
-        self.__img.size *= 0.5
-        
-        self.__trial_objects = []
-        
-        for wrong_ans in self.__test:
-            self.__trial_objects.append(
-                TrialObject(win, self.__img, 
-                    self.__name, wrong_ans, 'q'))
-            self.__trial_objects.append(
-                TrialObject(win, self.__img, wrong_ans, 
-                    self.__name, 'p'))
-    
-    def display(self):
-        self.__img.draw()
-        
-    def get_trial_objects(self):
-#        return self.__trial_objects
-        return random.sample(self.__trial_objects, len(self.__trial_objects))
-    
-    def get_img_stim(self):
-        return self.__img
-        
-        
 class TrialObject(object):
+    """
+    A class used to represent a trial object
     
-    def __init__(self, win, img, word1, word2, ans):
+    A trial object includes a image and two words, which include a correct
+    word and an incorrect word. The experiment participants must choose a 
+    correct answer. 
+    
+    In each round of the trial process, the program will choose a trial 
+    object and display its image firstly. Secondly, the screen will show two
+    words with a short interval among them.The participants are required to
+    press the p and q keys on the keyboard to choose the correct answer.
+    
+    Attributes
+    ----------
+    
+    Methods
+    -------
+    
+    """
+    
+    def __init__(self, window, img, word1, word2, ans):
+        """
+        Parameters
+        ----------
+        window : psychopy.visual.Window
+            an object used to display the stimuli
+        img : psychopy.visual.ImageStim
+            an image stimulus that show the object in the trial
+        word1 : 
+        """
         self.__img = img
         self.__word1_name = word1
         self.__word2_name = word2
-        self.__win = win
+        self.__window = window
         
         self.__word1 = visual.TextStim(win, text=word1, 
             colorSpace='rgb', font="Songti SC", color=[0, 0, 0])
@@ -103,6 +102,47 @@ class TrialObject(object):
         
     def words(self):
         return self.__word1_name, self.__word2_name
+
+
+class TrialObjects(object):
+    """
+    A class used to represent a set of trial objects
+    
+    A set of trial objects includes an image, a correct vocabulary to 
+    describe the picture, and 4 incorrect word to test the experiment 
+    participants. The picuture will display a thing which
+    may be a rabbit, a mountain, a bed and etc...
+    
+    """"
+    
+    def __init__(self, win, dir_path, array):
+        self.__name = array[0]
+        self.__test = array[1:]
+        self.__img = visual.ImageStim(win, dir_path + self.__name + ".jpeg")
+        self.__img.size *= 0.5
+        
+        self.__trial_objects = []
+        
+        for wrong_ans in self.__test:
+            self.__trial_objects.append(
+                TrialObject(win, self.__img, 
+                    self.__name, wrong_ans, 'q'))
+            self.__trial_objects.append(
+                TrialObject(win, self.__img, wrong_ans, 
+                    self.__name, 'p'))
+    
+    def display(self):
+        self.__img.draw()
+        
+    def get_trial_objects(self):
+#        return self.__trial_objects
+        return random.sample(self.__trial_objects, len(self.__trial_objects))
+    
+    def get_img_stim(self):
+        return self.__img
+        
+        
+
         
 
 class TrialProcess(object):
