@@ -54,9 +54,9 @@ class TrialObject(object):
         self.__word2_name = word2
         self.__window = window
         
-        self.__word1 = visual.TextStim(win, text=word1, 
+        self.__word1 = visual.TextStim(window, text=word1, 
             colorSpace='rgb', font="Songti SC", color=[0, 0, 0])
-        self.__word2 = visual.TextStim(win, text=word2, 
+        self.__word2 = visual.TextStim(window, text=word2, 
             colorSpace='rgb', font="Songti SC", color=[0, 0, 0])
         
         self.__word1.size = self.__word2.size = WORD_SIZE
@@ -68,17 +68,17 @@ class TrialObject(object):
     def display(self, flip=True):
         self.__img.draw()
         if flip:
-            self.__win.flip()
+            self.__window.flip()
         
     def display_word1(self, flip=True):
         self.__word1.draw()
         if flip:
-            self.__win.flip()
+            self.__window.flip()
     
     def display_word2(self, flip=True):
         self.__word2.draw()
         if flip:
-            self.__win.flip()
+            self.__window.flip()
         
         
     def response(self, key, clk):
@@ -113,7 +113,7 @@ class TrialObjects(object):
     participants. The picuture will display a thing which
     may be a rabbit, a mountain, a bed and etc...
     
-    """"
+    """
     
     def __init__(self, win, dir_path, array):
         self.__name = array[0]
@@ -167,10 +167,10 @@ class TrialProcess(object):
         self.__all_trial_objs = random.sample(self.__all_trial_objs, 
             len(self.__all_trial_objs))
         
-        self.__right_feedback_img = visual.ImageStim(self.__win, "./feedback/right.jpeg")
-        self.__false_feedback_img = visual.ImageStim(self.__win, "./feedback/fault.jpeg")
-        self.__right_sound_effect = sound.Sound("./feedback/right_sound_effect.wav")
-        self.__false_sound_effect = sound.Sound("./feedback/false_sound_effect.wav")
+        self.__right_feedback_img = visual.ImageStim(self.__win, "./resources/photos/right.jpeg")
+        self.__false_feedback_img = visual.ImageStim(self.__win, "./resources/photos/fault.jpeg")
+        self.__right_sound_effect = sound.Sound("./resources/audio/right_sound_effect.wav")
+        self.__false_sound_effect = sound.Sound("./resources/audio/false_sound_effect.wav")
      
     def show_right_feedback(self):
         self.__right_feedback_img.draw()

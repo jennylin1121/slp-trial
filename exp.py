@@ -42,8 +42,8 @@ def __init__():
             objs.append(TrialObjects(WIN, photo_dir_name, df.values[i]))
         return objs
     
-    STAGE1_OBJS = prepare_objs("./stage1.csv", "./photos_stage1/")
-    PRACTICE_OBJS = prepare_objs("./practice.csv", "./practice/")
+    STAGE1_OBJS = prepare_objs("./trials/stage1_former.csv", "./resources/photos/")
+    PRACTICE_OBJS = prepare_objs("./trials/practice.csv", "./resources/photos/")
                         
 def __del__():
     global WIN
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     dialogue_window()
     __init__()
     halt_and_show_msg("練習開始")
-    practice()ㄌ
+    practice()
     halt_and_show_msg("練習結束")
     stage1()
 #    halt_and_show_msg("""
