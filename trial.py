@@ -69,16 +69,29 @@ class TrialObject(object):
         self.__img.draw()
         if flip:
             self.__window.flip()
+        key = event.waitKeys(PHOTO_DISPLAY_INTERVAL, keyList=['escape'])
+        return key
+    
+    def display_image(self, flip=True):
+        self.__img.draw()
+        if flip:
+            self.__window.flip()
         
     def display_word1(self, flip=True):
         self.__word1.draw()
         if flip:
             self.__window.flip()
+        key = event.waitKeys(WORD1_DISPLAY_INTERVAL, 
+                keyList=['q','p', 'escape'])
+        return key
     
     def display_word2(self, flip=True):
         self.__word2.draw()
         if flip:
             self.__window.flip()
+        key = event.waitKeys(WORD2_DISPLAY_INTERVAL, 
+                keyList=['q','p', 'escape'])
+        return key
         
         
     def response(self, key, clk):
@@ -87,7 +100,7 @@ class TrialObject(object):
             crt = 'no response'
         else:
             self.__key = key[0]
-            crt = str(self.is_correct())
+            crt = self.is_correct()
         
         return {"response_time" : self.__response_time,
                 "word1" : self.__word1_name,
@@ -116,33 +129,52 @@ class TrialObjects(object):
     """
     
     def __init__(self, win, dir_path, array):
-        self.__name = array[0]
-        self.__test = array[1:]
-        self.__img = visual.ImageStim(win, dir_path + self.__name + ".jpeg")
-        self.__img.size *= 0.5
+        self.name = array[0]
+        self.test = array[1:]
+        self.img = visual.ImageStim(win, dir_path + self.name + ".jpeg")
+        self.img.size *= 0.5
         
-        self.__trial_objects = []
+        self.trial_objects = []
         
-        for wrong_ans in self.__test:
-            self.__trial_objects.append(
-                TrialObject(win, self.__img, 
-                    self.__name, wrong_ans, 'q'))
-            self.__trial_objects.append(
-                TrialObject(win, self.__img, wrong_ans, 
-                    self.__name, 'p'))
-    
-    def display(self):
-        self.__img.draw()
+        for wrong_ans in self.test:
+            self.trial_objects.append(
+                TrialObject(win, self.img, 
+                    self.name, wrong_ans, 'q'))
+            self.trial_objects.append(
+                TrialObject(win, self.img, wrong_ans, 
+                    self.name, 'p'))
         
     def get_trial_objects(self):
 #        return self.__trial_objects
-        return random.sample(self.__trial_objects, len(self.__trial_objects))
+        return random.sample(self.trial_objects, len(self.trial_objects))
     
-    def get_img_stim(self):
-        return self.__img
-        
-        
+class AudioTrialObject(TrialObject):
+    
+    def __init__(self, window, img, audio, word1, word2, ans):
+        self.__window = window
+        super().__init__(window, img, word1, word2, ans)
+        self.__audio = audio
+    
+    def display(self, flip=True):
+        self.__audio.play()
+        return super().display(flip)
 
+class AudioTrialObjects(TrialObjects):
+    
+    def __init__(self, window, img_directory_path, audio_directory_path, array):
+        self.name = array[0]
+        self.test = array[1:]
+        self.img = visual.ImageStim(window, img_directory_path + self.name + ".jpeg")
+        self.audio = sound.Sound(audio_directory_path + self.name + ".wav")
+        self.img.size *= 0.5
+        
+        self.trial_objects = []
+        for wrong_ans in self.test:
+            self.trial_objects.append(AudioTrialObject(window, self.img, 
+                self.audio, self.name, wrong_ans, 'q'))
+            self.trial_objects.append(AudioTrialObject(window, self.img,
+                self.audio, wrong_ans, self.name, 'p'))
+                
         
 
 class TrialProcess(object):
@@ -182,101 +214,104 @@ class TrialProcess(object):
         self.__false_sound_effect.play()
         self.__win.flip()
                         
-    def run(self, trial_objs=None, reaction=False):
+    def run(self, trial_objs=None, reaction=False, max_correctness=math.inf):
         data = []
         if trial_objs == None:
             trial_objs = self.__all_trial_objs
             
+        
+        self.__correctness = 0
         def __show_reaction(obj, reaction):
             self.__win.flip()
             if reaction:
                 if obj.is_correct():
                     self.show_right_feedback()
+                    self.__correctness += 1
                 else:
                     self.show_false_feedback()
                 event.waitKeys(2)
+        
+        i = 0
+        while i < len(trial_objs) and self.__correctness < max_correctness:
+            obj = trial_objs[i]
+            i += 1
             
-        for obj in trial_objs:
-
             # display cross
             self.__fixation.draw()
             self.__win.flip()
-            key = event.waitKeys(CROSS_DISPLAY_INTERVAL, keyList=['escape'])
-            if key != None:
+            keys = event.waitKeys(CROSS_DISPLAY_INTERVAL, keyList=['escape'])
+            if keys != None:
                 break
             
             # the interval between the cross and the photo
             self.__win.flip()
-            key = event.waitKeys(CROSS_PHOTO_INTERVAL, keyList=['escape'])
-            if key != None:
+            keys = event.waitKeys(CROSS_PHOTO_INTERVAL, keyList=['escape'])
+            if keys != None:
                 break
             
             # display the photo
-            obj.display()
-            key = event.waitKeys(PHOTO_DISPLAY_INTERVAL, keyList=['escape'])
-            if key != None:
+            keys = obj.display()
+            if keys != None:
                 break
             self.__win.flip()
             
             # the interval between the photo and the word1
-            key = event.waitKeys(PHOTO_WORD1_INTERVAL, keyList=['escape'])
-            if key != None:
+            keys = event.waitKeys(PHOTO_WORD1_INTERVAL, keyList=['escape'])
+            if keys != None:
                 break
             
             # start measuring the repsonse time
             clk = core.Clock()
             
             # show the first word and wait for WORD1_DISPLAY_INTERVAL
-            obj.display_word1()
-            key = event.waitKeys(WORD1_DISPLAY_INTERVAL, 
-                keyList=['q','p', 'escape'])
+            keys = obj.display_word1()
+            
                 
             
             # check if the subject has responsed or not
-            if key != None:
-                if 'escape' in key:
+            if keys != None:
+                if 'escape' in keys:
                     break
                 else:
-                    data.append(obj.response(key, clk.getTime()))
+                    data.append(obj.response(keys, clk.getTime()))
                     __show_reaction(obj, reaction)
                     continue
                     
             # clear the first word and wait for WORD1_WORD2_INTERVAL
             self.__win.flip()
-            key = event.waitKeys(WORD1_WORD2_INTERVAL, 
+            keys = event.waitKeys(WORD1_WORD2_INTERVAL, 
                 keyList=['q','p', 'escape'])
             
             # check the response
-            if key != None:
-                if 'escape' in key:
+            if keys != None:
+                if 'escape' in keys:
                     break
                 else:
-                    data.append(obj.response(key, clk.getTime()))
+                    data.append(obj.response(keys, clk.getTime()))
                     __show_reaction(obj, reaction)
                     continue
                 
             # show the next word and wait for WORD2_DISPLAY_INTERVAL
-            obj.display_word2()
-            key = event.waitKeys(WORD2_DISPLAY_INTERVAL, keyList=['q','p', 'escape'])
+            keys = obj.display_word2()
             
             # check the response
-            if key != None:
-                if 'escape' in key:
+            if keys != None:
+                if 'escape' in keys:
                     break
                 else:
-                    data.append(obj.response(key, clk.getTime()))
+                    data.append(obj.response(keys, clk.getTime()))
                     __show_reaction(obj, reaction)
                     continue
             
             # clear the seconde word and wait for WORD2_CROSS_INTERVAL
             self.__win.flip()
-            key = event.waitKeys(WORD2_CROSS_INTERVAL, keyList=['q','p', 'escape'])
+            keys = event.waitKeys(WORD2_CROSS_INTERVAL, keyList=['q','p', 'escape'])
             
-            if key != None:
-                if 'escape' in key:
+            if keys != None:
+                if 'escape' in keys:
                     break
                 else:
-                    data.append(obj.response(key, clk.getTime()))
+                    data.append(obj.response(keys, clk.getTime()))
                     __show_reaction(obj, reaction)
                     continue
 #            else:
