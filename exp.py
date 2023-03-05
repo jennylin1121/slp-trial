@@ -3,6 +3,7 @@ from psychopy.tools.filetools import fromFile, toFile
 from psychopy.hardware import keyboard
 from trial import TrialObjects, TrialObject, AudioTrialObjects, AudioTrialObject, TrialProcess
 import numpy as np
+import math
 import pandas as pd
 import random
 import os
@@ -76,6 +77,56 @@ def __del__():
     if WIN != None:
         WIN.close()
     core.quit()
+    
+def instructions():
+    global WIN
+    scenes = [
+        {
+            "img" : visual.ImageStim(WIN, "./resources/photos/village.jpeg"),
+            "audio" : sound.Sound("./resources/audio/village.wav"),
+            "skip_key" : 'escape'
+        },
+        {
+            "img" : visual.ImageStim(WIN, "./resources/photos/monster1.png"),
+            "audio" : sound.Sound("./resources/audio/monster1-1.wav")
+        },
+        {
+            "img" : visual.ImageStim(WIN, "./resources/photos/monster1.png"),
+            "audio" : sound.Sound("./resources/audio/monster1-2.wav")
+        },
+        {
+            "img" : visual.ImageStim(WIN, "./resources/photos/monster2.png"),
+            "audio" : sound.Sound("./resources/audio/monster2.wav")
+        },
+        {
+            "img" : visual.ImageStim(WIN, "./resources/photos/desert.jpeg"),
+            "audio" : sound.Sound("./resources/audio/desert.wav"),
+        },
+        {
+            "img" : visual.ImageStim(WIN, "./resources/photos/instruction1.jpeg"),
+            "audio" : sound.Sound("./resources/audio/instruction1.wav"),
+        },
+        {
+            "img" : visual.ImageStim(WIN, "./resources/photos/instruction2.jpeg"),
+            "audio" : sound.Sound("./resources/audio/instruction2.wav"),
+        }
+    ]
+    
+    for i in range(len(scenes)):
+        sound_duration = scenes[i]['audio'].getDuration()
+        if scenes[i]["audio"] != None:
+            scenes[i]["audio"].play()
+        scenes[i]["img"].draw()
+        WIN.flip()
+        if 'skip_key' in scenes[i].keys():
+            keys = event.waitKeys(sound_duration, keyList=[scenes[i]["skip_key"]])
+            if keys != None:
+                break
+        else:
+            core.wait(sound_duration)
+    
+    halt_and_show_msg("準備好了嗎? press any key to continue", sec=math.inf, size=1)
+    
 
 def output_data(data):
     global EXPINFO
@@ -99,16 +150,17 @@ def update_overview(data):
     dirname = "experiment_data"
     filename = os.path.join(dirname, "overview.xlsx")
     
-    
-    
     expinfo = EXPINFO
-    
     
     for key in data:
         df = pd.DataFrame.from_dict(data[key])
         print(df)
-        expinfo[key + '_average_response_time'] = df['response_time'].mean()
-        expinfo[key + '_correctness_rate'] = df['correct'].mean()
+        try:
+            expinfo[key + '_average_response_time'] = df['response_time'].mean()
+            expinfo[key + '_correctness_rate'] = df['correct'].mean()
+        except:
+            expinfo[key + '_average_response_time'] = 0
+            expinfo[key + '_correctness_rate'] = 0
         
     
     info = [expinfo]
@@ -122,7 +174,7 @@ def update_overview(data):
     
     overview_df.to_excel(filename, index=False)
    
-    
+   
     
 def type1():
     data = {}
@@ -191,14 +243,14 @@ def type3():
     # rest
     rest()
     
-    # stage2 : practice -> latter -> former
-    halt_and_show_msg("Stage2 練習開始")
-    practice(STAGE2_PRACTICE_OBJS)
-    halt_and_show_msg("Stage2 練習結束")
-    data['stage2_latter'] = perform_experiment(STAGE2_LATTER_OBJS)
-    halt_and_show_msg("The end of stage2 latter")
-    data['stage2_former'] = perform_experiment(STAGE2_FORMER_OBJS)
-    halt_and_show_msg("The end of stage2 former")
+    # stage1 : practice -> latter -> former
+    halt_and_show_msg("Stage1 練習開始")
+    practice(STAGE1_PRACTICE_OBJS)
+    halt_and_show_msg("Stage1 練習結束")
+    data['stage1_latter'] = perform_experiment(STAGE1_LATTER_OBJS)
+    halt_and_show_msg("The end of stage1 latter")
+    data['stage1_former'] = perform_experiment(STAGE1_FORMER_OBJS)
+    halt_and_show_msg("The end of stage1 former")
     
     return data
     
@@ -255,12 +307,12 @@ def perform_experiment(stage_objs):
     return dt
     
 
-def halt_and_show_msg(text, sec=5, keyList=None):
+def halt_and_show_msg(text, sec=5, keyList=None, size=2):
     global WIN
     
     text_stim = visual.TextStim(WIN, text=text, 
         color=[0, 0, 0], font="Songti SC")
-    text_stim.size = 2
+    text_stim.size = size
     text_stim.draw()
     WIN.flip()
     event.waitKeys(sec, keyList=keyList)
@@ -279,6 +331,7 @@ def rest():
 if __name__ == '__main__':
     dialogue_window()
     __init__()
+    instructions()
     data = eval("type"+TYPE)()
     
     combined_data = []

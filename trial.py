@@ -47,7 +47,17 @@ class TrialObject(object):
             an object used to display the stimuli
         img : psychopy.visual.ImageStim
             an image stimulus that show the object in the trial
-        word1 : 
+        word1 : str
+            the first word that will be shown on the screen for participants
+        word2 : str
+            the second word that will be shown on the screen for participants
+        ans : str
+            the ans will be a single key and it will be used to check if
+            participants' answer is correct or not.
+
+            For example: initially, the ans is set to be 'q'. In the trial
+            process, the object will check if the user's input is 'q' or other
+            keys. If the user's input is 'q', the user pass this trial.
         """
         self.__img = img
         self.__word1_name = word1
@@ -64,8 +74,32 @@ class TrialObject(object):
         
         self.__ans = ans
         self.__response_time = 0
+        self.__key = None
         
     def display(self, flip=True):
+        """Display the stimulus of the trial object and wait for a fix specific
+        time interval. The time interval is PHOTO_DISPLAY_INTERVAL. The function
+        will listen to the keyboard event. When the user type the 'escape' key,
+        the function will immediately return. The return value will be a key
+        list, but normally, the list will only contain a single key, the
+        'escape' key.
+
+        Parameters
+        ----------
+        flip : Boolean, optional
+            if flip is set the True, the window will flip automatically, which
+            means that the image or orther kind of visual sitmulus will appear
+            on the screen immediately.
+
+        Returns
+        -------
+        list : 
+            a key list that only contains the 'escape' key, if the user
+            types the 'escape' key on the keyboard when the object displayes.
+        None : 
+            if user doesn't type any key during the interval that the object
+            displayes.
+        """
         self.__img.draw()
         if flip:
             self.__window.flip()
@@ -73,28 +107,80 @@ class TrialObject(object):
         return key
     
     def display_image(self, flip=True):
+        """Display the image of the trial object
+
+        Parameters
+        ----------
+        flip : Boolean, optional, default is True
+            if flip is set the True, the window will flip automatically, which
+            means that the image will appear on the screen immediately.
+        """
         self.__img.draw()
         if flip:
             self.__window.flip()
         
     def display_word1(self, flip=True):
+        """Display the word1 of the trial object and wait for a fixed specific
+        time interval. The time interval is set to be WORD1_DISPLAY_INTERVAL.
+
+        Parameters
+        ----------
+        flip : Boolean, optional, default is True
+            if flip is set the True, the window will flip automatically, which
+            means that the image will appear on the screen immediately.
+
+        Returns
+        -------
+        a list that contains keys that are pushed during the interval that 
+        word1 is display.
+        """
         self.__word1.draw()
         if flip:
             self.__window.flip()
-        key = event.waitKeys(WORD1_DISPLAY_INTERVAL, 
+        keys = event.waitKeys(WORD1_DISPLAY_INTERVAL, 
                 keyList=['q','p', 'escape'])
-        return key
+        return keys
     
     def display_word2(self, flip=True):
+        """Display the word1 of the trial object and wait for a fixed specific
+        time interval. The time interval is set to be WORD2_DISPLAY_INTERVAL.
+
+        Parameters
+        ----------
+        flip : Boolean, optional, default is True
+            if flip is set the True, the window will flip automatically, which
+            means that the image will appear on the screen immediately.
+        
+        Returns
+        -------
+        a list that contains keys that are pushed during the interval that 
+        word2 is display.
+        """
+
         self.__word2.draw()
         if flip:
             self.__window.flip()
-        key = event.waitKeys(WORD2_DISPLAY_INTERVAL, 
+        keys = event.waitKeys(WORD2_DISPLAY_INTERVAL, 
                 keyList=['q','p', 'escape'])
-        return key
+        return keys
         
         
     def response(self, key, clk):
+        """Save user's response and the reaction time then return the 
+        correctness and the content of the object
+        
+        Parameters
+        ----------
+        key : str 
+            user's input
+        clk : int, float
+            user's response time
+            
+        Returns
+        -------
+        A dictionary that contains two words, user's response time, and 
+        his/her reaction time
+        """
         self.__response_time = clk
         if key == None:
             crt = 'no response'
@@ -108,12 +194,29 @@ class TrialObject(object):
                 "correct" : crt}
         
     def is_correct(self, ans=None):
+        """Check if user's key input is correct or not
+        
+        Parameters
+        ----------
+        ans : str, Optional
+            specifies the ans of this trial object
+        
+        Returns
+        -------
+        return True if user's input is correct or return False
+        """
         if ans == None:
             return self.__key == self.__ans
         else:
             return ans == self.__ans
         
     def words(self):
+        """Get two words of the trial object
+        
+        Returns
+        -------
+        Two words that are string type
+        """
         return self.__word1_name, self.__word2_name
 
 
@@ -129,6 +232,9 @@ class TrialObjects(object):
     """
     
     def __init__(self, win, dir_path, array):
+        """
+        """
+        
         self.name = array[0]
         self.test = array[1:]
         self.img = visual.ImageStim(win, dir_path + self.name + ".jpeg")
