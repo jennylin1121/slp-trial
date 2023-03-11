@@ -127,6 +127,14 @@ def instructions():
     
     halt_and_show_msg("準備好了嗎? press any key to continue", sec=math.inf, size=1)
     
+def ending_scenary():
+    
+    fleeting_img = visual.ImageStim(WIN, "./resources/photos/fleeting.jpeg")
+    fleeting_img.draw()
+    WIN.flip()
+    event.waitKeys()
+    
+    
 
 def output_data(data):
     global EXPINFO
@@ -333,13 +341,13 @@ if __name__ == '__main__':
     __init__()
     instructions()
     data = eval("type"+TYPE)()
+    ending_scenary()
     
     combined_data = []
     for key in data:
         combined_data += data[key]
     
     df = output_data(combined_data)
-    
     
     update_overview(data)
     
