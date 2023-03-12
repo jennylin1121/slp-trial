@@ -129,10 +129,13 @@ def instructions():
     
 def ending_scenary():
     
-    fleeting_img = visual.ImageStim(WIN, "./resources/photos/fleeting.jpeg")
+    fleeting_sound = sound.Sound("./resources/audio/fleeting.wav")
+    fleeting_img = visual.ImageStim(WIN, "./resources/photos/fleeting.png")
+    fleeting_img.size *= 0.5
     fleeting_img.draw()
     WIN.flip()
-    event.waitKeys()
+    fleeting_sound.play()
+    event.waitKeys(fleeting_sound.getDuration())
     
     
 
@@ -181,13 +184,8 @@ def update_overview(data):
         overview_df = info_df
     
     overview_df.to_excel(filename, index=False)
-   
-   
     
-def type1():
-    data = {}
-    
-    # stage1 : practice -> former -> latter
+def stage1_former_latter(data):
     halt_and_show_msg("Stage1 練習開始")
     practice(STAGE1_PRACTICE_OBJS)
     halt_and_show_msg("Stage1 練習結束")
@@ -196,24 +194,7 @@ def type1():
     data['stage1_latter'] = perform_experiment(STAGE1_LATTER_OBJS)
     halt_and_show_msg("The end of stage1 latter")
     
-    # rest
-    rest()
-
-    # stage2 : practice -> former -> latter
-    halt_and_show_msg("Stage2 練習開始")
-    practice(STAGE2_PRACTICE_OBJS)
-    halt_and_show_msg("Stage2 練習結束")
-    data['stage2_former'] = perform_experiment(STAGE2_FORMER_OBJS)
-    halt_and_show_msg("The end of stage2 former")
-    data['stage2_latter'] = perform_experiment(STAGE2_LATTER_OBJS)
-    halt_and_show_msg("The end of stage2 latter")
-    
-    return data
-
-def type2():
-    data = {}
-    
-    # stage1 : practice -> latter -> former
+def stage1_latter_former(data):
     halt_and_show_msg("Stage1 練習開始")
     practice(STAGE1_PRACTICE_OBJS)
     halt_and_show_msg("Stage1 練習結束")
@@ -221,11 +202,18 @@ def type2():
     halt_and_show_msg("The end of stage1 latter")
     data['stage1_former'] =  perform_experiment(STAGE1_FORMER_OBJS)
     halt_and_show_msg("The end of stage1 former")
-
-    # rest
-    rest()
     
-    # stage2 : practice -> latter -> former
+def stage2_former_latter(data):
+    halt_and_show_msg("Stage2 練習開始")
+    practice(STAGE2_PRACTICE_OBJS)
+    halt_and_show_msg("Stage2 練習結束")
+    data['stage2_former'] = perform_experiment(STAGE2_FORMER_OBJS)
+    halt_and_show_msg("The end of stage2 former")
+    data['stage2_latter'] = perform_experiment(STAGE2_LATTER_OBJS)
+    halt_and_show_msg("The end of stage2 latter")
+    
+
+def stage2_latter_former(data):
     halt_and_show_msg("Stage2 練習開始")
     practice(STAGE2_PRACTICE_OBJS)
     halt_and_show_msg("Stage2 練習結束")
@@ -233,6 +221,34 @@ def type2():
     halt_and_show_msg("The end of stage2 latter")
     data['stage2_former'] = perform_experiment(STAGE2_FORMER_OBJS)
     halt_and_show_msg("The end of stage2 former")
+   
+   
+    
+def type1():
+    data = {}
+    
+    # stage1 : practice -> former -> latter
+    stage1_former_latter(data)
+    
+    # rest
+    rest()
+
+    # stage2 : practice -> former -> latter
+    stage2_former_latter(data)
+    
+    return data
+
+def type2():
+    data = {}
+    
+    # stage1 : practice -> latter -> former
+    stage1_latter_former(data)
+
+    # rest
+    rest()
+    
+    # stage2 : practice -> latter -> former
+    stage2_latter(former)
     
     return data
     
@@ -240,25 +256,13 @@ def type3():
     data = {}
 
     # stage2 : practice -> former -> latter
-    halt_and_show_msg("Stage2 練習開始")
-    practice(STAGE2_PRACTICE_OBJS)
-    halt_and_show_msg("Stage2 練習結束")
-    data['stage2_former'] = perform_experiment(STAGE2_FORMER_OBJS)
-    halt_and_show_msg("The end of stage2 former")
-    data['stage2_latter'] = perform_experiment(STAGE2_LATTER_OBJS)
-    halt_and_show_msg("The end of stage2 latter")
+    stage2_former_latter(data)
     
     # rest
     rest()
     
     # stage1 : practice -> latter -> former
-    halt_and_show_msg("Stage1 練習開始")
-    practice(STAGE1_PRACTICE_OBJS)
-    halt_and_show_msg("Stage1 練習結束")
-    data['stage1_latter'] = perform_experiment(STAGE1_LATTER_OBJS)
-    halt_and_show_msg("The end of stage1 latter")
-    data['stage1_former'] = perform_experiment(STAGE1_FORMER_OBJS)
-    halt_and_show_msg("The end of stage1 former")
+    stage1_latter_former(data)
     
     return data
     
@@ -266,26 +270,13 @@ def type4():
     
     data = {}
     # stage2 : practice -> latter -> former
-    halt_and_show_msg("Stage2 練習開始")
-    practice(STAGE2_PRACTICE_OBJS)
-    halt_and_show_msg("Stage2 練習結束")
-    data['stage2_latter'] = perform_experiment(STAGE2_LATTER_OBJS)
-    halt_and_show_msg("The end of stage2 latter")
-    data['stage2_former'] = perform_experiment(STAGE2_FORMER_OBJS)
-    halt_and_show_msg("The end of stage2 former")
+    stage2_latter_former(data)
     
     # rest
     rest()
     
-    data1 = []
     # stage1 : practice -> former -> latter
-    halt_and_show_msg("Stage1 練習開始")
-    practice(STAGE1_PRACTICE_OBJS)
-    halt_and_show_msg("Stage1 練習結束")
-    data['stage1_former'] = perform_experiment(STAGE1_FORMER_OBJS)
-    halt_and_show_msg("The end of stage1 former")
-    data['stage1_latter'] = perform_experiment(STAGE1_LATTER_OBJS)
-    halt_and_show_msg("The end of stage1 latter")
+    stage1_former_latter(data)
     
     
     return data
@@ -327,29 +318,31 @@ def halt_and_show_msg(text, sec=5, keyList=None, size=2):
     WIN.flip()
 
 def rest():
-    text_stim = visual.TextStim(WIN, text="Rest", 
-        color=[0, 0, 0], font="Songti SC")
-    text_stim.size = 2
-    text_stim.draw()
+#    text_stim = visual.TextStim(WIN, text="Rest", 
+#        color=[0, 0, 0], font="Songti SC")
+#    text_stim.size = 2
+#    text_stim.draw()
+    rest_img = visual.ImageStim(WIN, "./resources/photos/rest.png")
+    rest_img.draw()
     WIN.flip()
     keys1 = event.waitKeys(keyList=['lctrl'])
     keys2 = event.waitKeys(keyList=['w'])
     WIN.flip()
 
 if __name__ == '__main__':
-    dialogue_window()
+#    dialogue_window()
     __init__()
-    instructions()
-    data = eval("type"+TYPE)()
+#    instructions()
+#    data = eval("type"+TYPE)()
     ending_scenary()
     
-    combined_data = []
-    for key in data:
-        combined_data += data[key]
-    
-    df = output_data(combined_data)
-    
-    update_overview(data)
+#    combined_data = []
+#    for key in data:
+#        combined_data += data[key]
+#    
+#    df = output_data(combined_data)
+#    
+#    update_overview(data)
     
 #    halt_and_show_msg("""
 #    Thank you for your participation
