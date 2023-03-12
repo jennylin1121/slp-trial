@@ -17,6 +17,7 @@ STAGE1_LATTER_OBJS = None
 STAGE2_PRACTICE_OBJS = None
 STAGE2_FORMER_OBJS = None
 STAGE2_LATTER_OBJS = None
+REST_IMG = None
 
 NUM_OF_PRACTICES = 10
 NUM_OF_STAGE1_OBJECTS = 10
@@ -41,6 +42,7 @@ def dialogue_window():
 def __init__():
     global WIN, STAGE1_FORMER_OBJS, STAGE1_LATTER_OBJS, STAGE1_PRACTICE_OBJS
     global STAGE2_FORMER_OBJS, STAGE2_LATTER_OBJS, STAGE2_PRACTICE_OBJS
+    global REST_IMG, REST_SOUND_EFFECT
         
     WIN = visual.Window(allowGUI=False, screen=0,
                         monitor="testMonitor", units="deg", fullscr=True,
@@ -70,7 +72,9 @@ def __init__():
     STAGE2_FORMER_OBJS = prepare_audio_trial_objs("./trials/stage2_former.csv", "./resources/photos/", "./resources/audio/")
     STAGE2_LATTER_OBJS = prepare_audio_trial_objs("./trials/stage2_latter.csv", "./resources/photos/", "./resources/audio/")
     STAGE2_PRACTICE_OBJS = prepare_audio_trial_objs("./trials/stage2_practice.csv", "./resources/photos/", "./resources/audio/")
-
+    
+    REST_IMG = visual.ImageStim(WIN, "./resources/photos/rest.png")
+    REST_SOUND_EFFECT = sound.Sound("./resources/audio/rest.wav")
 
 def __del__():
     global WIN
@@ -121,13 +125,14 @@ def instructions():
         if 'skip_key' in scenes[i].keys():
             keys = event.waitKeys(sound_duration, keyList=[scenes[i]["skip_key"]])
             if keys != None:
+                scenes[i]['audio'].pause()
                 break
         else:
             core.wait(sound_duration)
     
     halt_and_show_msg("準備好了嗎? press any key to continue", sec=math.inf, size=1)
     
-def ending_scenary():
+def ending_scene():
     
     fleeting_sound = sound.Sound("./resources/audio/fleeting.wav")
     fleeting_img = visual.ImageStim(WIN, "./resources/photos/fleeting.png")
@@ -185,42 +190,63 @@ def update_overview(data):
     
     overview_df.to_excel(filename, index=False)
     
-def stage1_former_latter(data):
+def the_end_of_stage_scene(text):
+    REST_SOUND_EFFECT.play()
+    halt_and_show_msg(text, sec=max(REST_SOUND_EFFECT.getDuration(), 5))
+    
+    
+def stage1_former_latter(data, start_no_round, final=False):
     halt_and_show_msg("Stage1 練習開始")
     practice(STAGE1_PRACTICE_OBJS)
     halt_and_show_msg("Stage1 練習結束")
-    data['stage1_former'] = perform_experiment(STAGE1_FORMER_OBJS)
-    halt_and_show_msg("The end of stage1 former")
-    data['stage1_latter'] = perform_experiment(STAGE1_LATTER_OBJS)
-    halt_and_show_msg("The end of stage1 latter")
+    data['stage1_former'] = perform_experiment(STAGE1_FORMER_OBJS, start_no_round)
+    the_end_of_stage_scene("The end of stage1 former")
+    rest()
     
-def stage1_latter_former(data):
+    data['stage1_latter'] = perform_experiment(STAGE1_LATTER_OBJS, start_no_round + 1)
+    the_end_of_stage_scene("The end of stage1 latter")
+    if not final:
+        rest()
+    
+def stage1_latter_former(data, start_no_round, final=False):
     halt_and_show_msg("Stage1 練習開始")
     practice(STAGE1_PRACTICE_OBJS)
     halt_and_show_msg("Stage1 練習結束")
-    data['stage1_latter'] = perform_experiment(STAGE1_LATTER_OBJS)
-    halt_and_show_msg("The end of stage1 latter")
-    data['stage1_former'] =  perform_experiment(STAGE1_FORMER_OBJS)
-    halt_and_show_msg("The end of stage1 former")
+    data['stage1_latter'] = perform_experiment(STAGE1_LATTER_OBJS, start_no_round)
+    the_end_of_stage_scene("The end of stage1 latter")
+    rest()
     
-def stage2_former_latter(data):
+    data['stage1_former'] =  perform_experiment(STAGE1_FORMER_OBJS, start_no_round + 1)
+    the_end_of_stage_scene("The end of stage1 former")
+    if not final:
+        rest()
+    
+def stage2_former_latter(data, start_no_round, final=False):
     halt_and_show_msg("Stage2 練習開始")
     practice(STAGE2_PRACTICE_OBJS)
     halt_and_show_msg("Stage2 練習結束")
-    data['stage2_former'] = perform_experiment(STAGE2_FORMER_OBJS)
-    halt_and_show_msg("The end of stage2 former")
-    data['stage2_latter'] = perform_experiment(STAGE2_LATTER_OBJS)
-    halt_and_show_msg("The end of stage2 latter")
+    data['stage2_former'] = perform_experiment(STAGE2_FORMER_OBJS, start_no_round)
+    the_end_of_stage_scene("The end of stage2 former")
+    rest()
+    
+    data['stage2_latter'] = perform_experiment(STAGE2_LATTER_OBJS, start_no_round + 1)
+    the_end_of_stage_scene("The end of stage2 latter")
+    if not final:
+        rest()
     
 
-def stage2_latter_former(data):
+def stage2_latter_former(data, start_no_round, final=False):
     halt_and_show_msg("Stage2 練習開始")
     practice(STAGE2_PRACTICE_OBJS)
     halt_and_show_msg("Stage2 練習結束")
-    data['stage2_latter'] = perform_experiment(STAGE2_LATTER_OBJS)
-    halt_and_show_msg("The end of stage2 latter")
-    data['stage2_former'] = perform_experiment(STAGE2_FORMER_OBJS)
-    halt_and_show_msg("The end of stage2 former")
+    data['stage2_latter'] = perform_experiment(STAGE2_LATTER_OBJS, start_no_round)
+    the_end_of_stage_scene("The end of stage2 latter")
+    rest()
+    
+    data['stage2_former'] = perform_experiment(STAGE2_FORMER_OBJS, start_no_round + 1)
+    the_end_of_stage_scene("The end of stage2 former")
+    if not final:
+        rest()
    
    
     
@@ -228,13 +254,13 @@ def type1():
     data = {}
     
     # stage1 : practice -> former -> latter
-    stage1_former_latter(data)
+    stage1_former_latter(data, 1)
     
     # rest
     rest()
 
     # stage2 : practice -> former -> latter
-    stage2_former_latter(data)
+    stage2_former_latter(data, 3, True)
     
     return data
 
@@ -242,13 +268,13 @@ def type2():
     data = {}
     
     # stage1 : practice -> latter -> former
-    stage1_latter_former(data)
+    stage1_latter_former(data, 1)
 
     # rest
     rest()
     
     # stage2 : practice -> latter -> former
-    stage2_latter(former)
+    stage2_latter(former, 3, True)
     
     return data
     
@@ -256,13 +282,13 @@ def type3():
     data = {}
 
     # stage2 : practice -> former -> latter
-    stage2_former_latter(data)
+    stage2_former_latter(data, 1)
     
     # rest
     rest()
     
     # stage1 : practice -> latter -> former
-    stage1_latter_former(data)
+    stage1_latter_former(data, 3, True)
     
     return data
     
@@ -270,13 +296,13 @@ def type4():
     
     data = {}
     # stage2 : practice -> latter -> former
-    stage2_latter_former(data)
+    stage2_latter_former(data, 1)
     
     # rest
     rest()
     
     # stage1 : practice -> former -> latter
-    stage1_former_latter(data)
+    stage1_former_latter(data, 3, True)
     
     
     return data
@@ -297,10 +323,10 @@ def practice(practice_objs):
     trp.run(practice_trial_set, True, 3)
     
 
-def perform_experiment(stage_objs):
+def perform_experiment(stage_objs, no_round):
     global WIN
     
-    trp = TrialProcess(WIN, stage_objs)
+    trp = TrialProcess(WIN, stage_objs, no_round)
     dt = trp.run()
     
     return dt
@@ -322,27 +348,26 @@ def rest():
 #        color=[0, 0, 0], font="Songti SC")
 #    text_stim.size = 2
 #    text_stim.draw()
-    rest_img = visual.ImageStim(WIN, "./resources/photos/rest.png")
-    rest_img.draw()
+    REST_IMG.draw()
     WIN.flip()
     keys1 = event.waitKeys(keyList=['lctrl'])
     keys2 = event.waitKeys(keyList=['w'])
     WIN.flip()
 
 if __name__ == '__main__':
-#    dialogue_window()
+    dialogue_window()
     __init__()
-#    instructions()
-#    data = eval("type"+TYPE)()
-    ending_scenary()
+    instructions()
+    data = eval("type"+TYPE)()
+    ending_scene()
     
-#    combined_data = []
-#    for key in data:
-#        combined_data += data[key]
-#    
-#    df = output_data(combined_data)
-#    
-#    update_overview(data)
+    combined_data = []
+    for key in data:
+        combined_data += data[key]
+    
+    df = output_data(combined_data)
+    
+    update_overview(data)
     
 #    halt_and_show_msg("""
 #    Thank you for your participation

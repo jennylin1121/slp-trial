@@ -285,7 +285,7 @@ class AudioTrialObjects(TrialObjects):
 
 class TrialProcess(object):
     
-    def __init__(self, win, trial_objs_set):
+    def __init__(self, win, trial_objs_set, no_round=None):
         self.__win = win
         self.__trial_objs_set = trial_objs_set
         self.__fixation = visual.GratingStim(self.__win, color=[0, 0, 0], 
@@ -309,6 +309,19 @@ class TrialProcess(object):
         self.__false_feedback_img = visual.ImageStim(self.__win, "./resources/photos/fault.jpeg")
         self.__right_sound_effect = sound.Sound("./resources/audio/right_sound_effect.wav")
         self.__false_sound_effect = sound.Sound("./resources/audio/false_sound_effect.wav")
+        
+        self.setup_round_scene(no_round)
+        
+    def setup_round_scene(self, no_round):
+        if no_round != None:
+            self.__round_img = visual.ImageStim(self.__win, "./resources/photos/round%d.png" % no_round)
+            self.__shot_effect = sound.Sound("./resources/audio/round%d_shot.wav" % no_round)
+            self.__round_sound = sound.Sound("./resources/audio/round%d.wav" % no_round)
+        else:
+            self.__round_img = None
+            self.__shot_effect = None
+            self.__round_sound = None
+            
      
     def show_right_feedback(self):
         self.__right_feedback_img.draw()
@@ -327,7 +340,13 @@ class TrialProcess(object):
             
         
         self.__correctness = 0
+        
+        def __shot():
+            if self.__shot_effect != None:
+                self.__shot_effect.play()
+        
         def __show_reaction(obj, reaction):
+            __shot()
             self.__win.flip()
             if reaction:
                 if obj.is_correct():
@@ -336,6 +355,12 @@ class TrialProcess(object):
                 else:
                     self.show_false_feedback()
                 event.waitKeys(2)
+        
+        if self.__round_img != None and self.__round_sound != None:
+            self.__round_img.draw()
+            self.__win.flip()
+            self.__round_sound.play()
+            core.wait(self.__round_sound.getDuration())
         
         i = 0
         while i < len(trial_objs) and self.__correctness < max_correctness:
@@ -420,15 +445,7 @@ class TrialProcess(object):
                     data.append(obj.response(keys, clk.getTime()))
                     __show_reaction(obj, reaction)
                     continue
-#            else:
-#                # show the text that tells the user that his/her 
-#                # response is too slow
-#                self.__slow_alert_text.draw()
-#                self.__win.flip()
-#                data.append(obj.response(None, clk.getTime()))
-#                key = event.waitKeys(1, keyList=['escape'])
-#                if key != None:
-#                    break
+
                     
         return data
     
