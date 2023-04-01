@@ -274,7 +274,7 @@ def type2():
     rest()
     
     # stage2 : practice -> latter -> former
-    stage2_latter(former, 3, True)
+    stage2_latter_former(data, 3, True)
     
     return data
     
