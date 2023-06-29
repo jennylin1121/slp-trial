@@ -39,7 +39,7 @@ class TrialObject(object):
     
     """
     
-    def __init__(self, window, img, word1, word2, ans):
+    def __init__(self, window, img, word1, word2, ans, _type):
         """
         Parameters
         ----------
@@ -63,6 +63,7 @@ class TrialObject(object):
         self.__word1_name = word1
         self.__word2_name = word2
         self.__window = window
+        self.__type = _type
         
         self.__word1 = visual.TextStim(window, text=word1, 
             colorSpace='rgb', font="Songti SC", color=[0, 0, 0])
@@ -191,7 +192,8 @@ class TrialObject(object):
         return {"response_time" : self.__response_time,
                 "word1" : self.__word1_name,
                 "word2" : self.__word2_name,
-                "correct" : crt}
+                "correct" : crt,
+                "type" : self.__type}
         
     def is_correct(self, ans=None):
         """Check if user's key input is correct or not
@@ -218,6 +220,15 @@ class TrialObject(object):
         Two words that are string type
         """
         return self.__word1_name, self.__word2_name
+        
+    def type(self):
+        """The type of the test
+        
+        Returns
+        -------
+        A chinese string that representsthe type of the test
+        """
+        return self._type
 
 
 class TrialObjects(object):
@@ -235,20 +246,20 @@ class TrialObjects(object):
         """
         """
         
-        self.name = array[0]
+        self.name = array['目標詞彙']
         self.test = array[1:]
         self.img = visual.ImageStim(win, dir_path + self.name + ".jpeg")
         self.img.size *= 0.5
         
         self.trial_objects = []
         
-        for wrong_ans in self.test:
+        for key, value in self.test.items():
             self.trial_objects.append(
                 TrialObject(win, self.img, 
-                    self.name, wrong_ans, 'q'))
+                    self.name, value, 'q', key))
             self.trial_objects.append(
-                TrialObject(win, self.img, wrong_ans, 
-                    self.name, 'p'))
+                TrialObject(win, self.img, value,
+                    self.name, 'p', key))
         
     def get_trial_objects(self):
 #        return self.__trial_objects
@@ -256,9 +267,9 @@ class TrialObjects(object):
     
 class AudioTrialObject(TrialObject):
     
-    def __init__(self, window, img, audio, word1, word2, ans):
+    def __init__(self, window, img, audio, word1, word2, ans, _type):
         self.__window = window
-        super().__init__(window, img, word1, word2, ans)
+        super().__init__(window, img, word1, word2, ans, _type)
         self.__audio = audio
     
     def display(self, flip=True):
@@ -275,11 +286,11 @@ class AudioTrialObjects(TrialObjects):
         self.img.size *= 0.5
         
         self.trial_objects = []
-        for wrong_ans in self.test:
+        for key, value in self.test.items():
             self.trial_objects.append(AudioTrialObject(window, self.img, 
-                self.audio, self.name, wrong_ans, 'q'))
+                self.audio, self.name, value, 'q', key))
             self.trial_objects.append(AudioTrialObject(window, self.img,
-                self.audio, wrong_ans, self.name, 'p'))
+                self.audio, value, self.name, 'p', key))
                 
         
 

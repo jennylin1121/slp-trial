@@ -7,6 +7,7 @@ import math
 import pandas as pd
 import random
 import os
+import json
 
 
 WIN = None
@@ -23,6 +24,17 @@ NUM_OF_PRACTICES = 10
 NUM_OF_STAGE1_OBJECTS = 10
 
 TYPE = '1'
+
+def get_data_dirname():
+    dirname = "experiment_data"
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+    
+    data_dirname = os.path.join(dirname, "data")
+    if not os.path.exists(data_dirname):
+        os.mkdir(data_dirname)
+        
+    return data_dirname
 
 def dialogue_window():
     global EXPINFO, TYPE
@@ -52,16 +64,16 @@ def __init__():
     def prepare_trial_objs(config_file_name, photo_dir_name):
         objs = []
         df = pd.read_csv(config_file_name)
-        for i in range(df.shape[0]):
-            objs.append(TrialObjects(WIN, photo_dir_name, df.values[i]))
+        for index, row in df.iterrows():
+            objs.append(TrialObjects(WIN, photo_dir_name, row))
         assert isinstance(objs, list)
         return objs
     
     def prepare_audio_trial_objs(config_file_name, photo_dir_name, audio_dir_name):
         objs = []
         df = pd.read_csv(config_file_name)
-        for i in range(df.shape[0]):
-            objs.append(AudioTrialObjects(WIN, photo_dir_name, audio_dir_name, df.values[i]))
+        for index, row in df.iterrows():
+            objs.append(AudioTrialObjects(WIN, photo_dir_name, audio_dir_name, row))
         assert isinstance(objs, list)
         return objs
     
@@ -141,21 +153,17 @@ def ending_scene():
     WIN.flip()
     fleeting_sound.play()
     event.waitKeys(fleeting_sound.getDuration())
-    
+
+
     
 
 def output_data(data):
     global EXPINFO
-    dirname = "experiment_data"
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
     
-    data_dirname = os.path.join(dirname, "data")
-    if not os.path.exists(data_dirname):
-        os.mkdir(data_dirname)
+    data_dirname = get_data_dirname()
     
     filename = os.path.join(data_dirname,
-        EXPINFO['Participant'] + EXPINFO['dateStr'] + '.xlsx')
+        EXPINFO['Participant'] + EXPINFO['dateStr'] + 'raw_data.xlsx')
     
     df = pd.DataFrame.from_dict(data)
     df.to_excel(filename)
@@ -163,32 +171,67 @@ def output_data(data):
     return df
     
 def update_overview(data):
-    dirname = "experiment_data"
-    filename = os.path.join(dirname, "overview.xlsx")
+    
     
     expinfo = EXPINFO
     
-    for key in data:
-        df = pd.DataFrame.from_dict(data[key])
-        print(df)
-        try:
-            expinfo[key + '_average_response_time'] = df['response_time'].mean()
-            expinfo[key + '_correctness_rate'] = df['correct'].mean()
-        except:
-            expinfo[key + '_average_response_time'] = 0
-            expinfo[key + '_correctness_rate'] = 0
-        
+    
+    stages = ["stage1", "stage2"]
+    types = ["former", "latter"]
+    keys = ["音同形似","音異形似","音同形異","音異形異"]
+    rows = {}
+    for stage in stages:
+        for tp in types:
+            print(stages)
+            data_name = f"{stage}_{tp}"
+            data_list = data[data_name]
+
+            df = pd.DataFrame.from_dict(data_list)
+            try:
+                expinfo[data_name + '_average_response_time'] = df['response_time'].mean()
+                expinfo[data_name + '_correctness_rate'] = df['correct'].mean()
+            except:
+                expinfo[data_name + '_average_response_time'] = 0
+                expinfo[data_name + '_correctness_rate'] = 0
+            
+            row = {}
+            
+            for key in keys:
+                try:
+                    sub_df = df[df.type == key]
+                    row[f"average_response_time_{key}"] = sub_df['response_time'].mean()
+                    row[f"correctness_rate_{key}"] = sub_df['correct'].mean()
+                except:
+                    row[f"average_response_time_{key}"] = 0
+                    row[f"correctness_rate_{key}"] = 0
+            
+            rows[data_name] = row
+    
+    response_time_header = []
+    correctness_rate_header = []
+    for key in keys:
+        correctness_rate_header.append(f"correctness_rate_{key}")
+        response_time_header.append(f"average_response_time_{key}")
+    
+    df = pd.DataFrame.from_dict(rows, orient='index', columns=response_time_header + correctness_rate_header)
+    data_dirname = get_data_dirname()
+    filename = os.path.join(data_dirname,
+        EXPINFO['Participant'] + EXPINFO['dateStr'] + 'statistic_data.xlsx')
+    print(json.dumps(data, indent=4, ensure_ascii=False))
+    print(df)
+    df.to_excel(filename)
     
     info = [expinfo]
     info_df = pd.DataFrame(info)
     
+    dirname = "experiment_data"
+    filename = os.path.join(dirname, "overview.xlsx")
+    overview_df.to_excel(filename, index=False)
     if os.path.exists(filename):
         overview_df = pd.read_excel(filename)
         overview_df = pd.concat([overview_df, info_df])
     else:
         overview_df = info_df
-    
-    overview_df.to_excel(filename, index=False)
     
 def the_end_of_stage_scene(text):
     REST_SOUND_EFFECT.play()
@@ -364,6 +407,9 @@ if __name__ == '__main__':
     combined_data = []
     for key in data:
         combined_data += data[key]
+    
+    with open("data.json", "w") as file:
+        json.dump(data, file, indent=4, ensure_ascii=False)
     
     df = output_data(combined_data)
     
